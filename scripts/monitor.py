@@ -32,7 +32,7 @@ def send_telegram_message(text):
 
     cmd = [
         "openclaw", "message", "send",
-        "--channel", "telegram",
+        "--channel", "telegram", "--account", "main",
         "--target", TELEGRAM_CHAT_ID,
         "--message", text
     ]
