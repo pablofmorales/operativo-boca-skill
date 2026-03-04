@@ -53,11 +53,11 @@ def get_reddit_thread_comments():
             
         target_thread_id = None
         target_title = ""
-        keywords = ['partido', 'previa', 'post', 'discusion', 'thread', 'vs']
+        keywords = ['partido', 'previa', 'post', 'discusion', 'thread', 'vs', 'mt']
         
         for post in data['data']['children']:
             title = post['data']['title'].lower()
-            if any(word in title for word in keywords) and "boca" in title:
+            if any(word in title for word in keywords) and ("boca" in title or "mt" in title):
                 target_thread_id = post['data']['id']
                 target_title = post['data']['title']
                 break
@@ -71,7 +71,7 @@ def get_reddit_thread_comments():
                 data_hot = json.loads(response_hot.read().decode())
                 for post in data_hot['data']['children']:
                     title = post['data']['title'].lower()
-                    if any(word in title for word in keywords) and "boca" in title:
+                    if any(word in title for word in keywords) and ("boca" in title or "mt" in title):
                         target_thread_id = post['data']['id']
                         target_title = post['data']['title']
                         break
@@ -95,7 +95,7 @@ def get_reddit_thread_comments():
         if not comments:
             return f"(Thread '{target_title}' encontrado, pero sin comentarios recientes)"
             
-        return f"Thread: {target_title}\n" + "\n".join([f"- {c}" for c in comments])
+        return f"Thread Reddit: {target_title}\n" + "\n".join([f"- {c}" for c in comments])
     except Exception as e:
         return f"(Error leyendo Reddit: {e})"
 
@@ -141,7 +141,6 @@ Tweets de referentes:
     return f"🔵🟡🔵 **Termómetro Xeneize** 🔵🟡🔵\n\n{resumen.strip()}"
 
 def main():
-    # Permitir forzar ejecución para testing: python3 monitor.py --force
     force_run = len(sys.argv) > 1 and sys.argv[1] == "--force"
     
     has_match, match_start = check_boca_match_today()
