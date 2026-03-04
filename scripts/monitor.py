@@ -33,7 +33,7 @@ def send_telegram_message(text):
     cmd = [
         "openclaw", "message", "send",
         "--channel", "telegram",
-        "--to", TELEGRAM_CHAT_ID,
+        "--target", TELEGRAM_CHAT_ID,
         "--message", text
     ]
     subprocess.run(cmd, capture_output=True)
