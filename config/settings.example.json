@@ -1,0 +1,18 @@
+{
+  "telegram_chat_id": "TU_CHAT_ID_AQUI",
+  "twitter_accounts": [
+    "La12tuittera",
+    "Tato_Aguilera",
+    "SANGREXENEIZE",
+    "DavooXeneizeJRR",
+    "BocaJrsOficial",
+    "TermitoBostero",
+    "Labocatw",
+    "EslovenoOficial"
+  ],
+  "reddit_subreddit": "BocaJuniors",
+  "reddit_keywords": [
+    "partido", "previa", "post", "discusion", "thread", "vs", "mt", "boca"
+  ],
+  "fixture_path": "config/fixture.example.json"
+}
