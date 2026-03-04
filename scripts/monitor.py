@@ -107,7 +107,6 @@ def get_reddit_thread_comments():
         if not target_thread_id:
             return "", []
 
-        # Usamos sort=top para traer los que tienen más upvotes (más relevantes)
         req_comments = urllib.request.Request(
             f"https://www.reddit.com/r/{REDDIT_SUB}/comments/{target_thread_id}.json?sort=top",
             headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) OperativoBocaBot/1.0"}
@@ -118,7 +117,6 @@ def get_reddit_thread_comments():
         raw_comments = []
         top_highlights = []
         
-        # Filtrar automoderator y comentarios borrados
         valid_comments = [
             c['data'] for c in comments_data[1]['data']['children'] 
             if c.get('kind') == 't1' and c['data'].get('body') and c['data'].get('body') not in ["[deleted]", "[removed]"] 
@@ -127,10 +125,8 @@ def get_reddit_thread_comments():
         
         for child in valid_comments[:15]:
             body = child.get('body').replace('\n', ' ')
-            score = child.get('score', 0)
             raw_comments.append(body)
             
-        # Agarrar los 2 o 3 con más upvotes para destacarlos textualmente
         for child in sorted(valid_comments, key=lambda x: x.get('score', 0), reverse=True)[:3]:
             body = child.get('body').replace('\n', ' ')
             score = child.get('score', 0)
@@ -144,6 +140,25 @@ def get_reddit_thread_comments():
         return context_string, top_highlights
     except Exception as e:
         return f"(Error leyendo Reddit: {e})", []
+
+def call_ollama(prompt):
+    payload = {
+        "model": "qwen3.5:9b",
+        "prompt": prompt,
+        "stream": False
+    }
+    
+    try:
+        req = urllib.request.Request(
+            "http://192.168.1.22:11434/api/generate",
+            data=json.dumps(payload).encode('utf-8'),
+            headers={'Content-Type': 'application/json'}
+        )
+        with urllib.request.urlopen(req, timeout=30) as response:
+            result = json.loads(response.read().decode('utf-8'))
+            return result.get('response', '')
+    except Exception as e:
+        return f"Error conectando a Ollama Krillin: {e}"
 
 def get_tweets_and_summarize():
     auth_token, ct0 = get_twitter_creds()
@@ -161,14 +176,13 @@ def get_tweets_and_summarize():
                 ], capture_output=True, text=True)
                 
                 tweets = json.loads(result.stdout)
-                for t in tweets[:2]: # Agarro los 2 más recientes de cada uno para contexto
+                for t in tweets[:2]:
                     text = t.get('text', '').replace('\n', ' ')
                     views = t.get('views', 0)
                     all_tweets.append({"account": account, "text": text, "views": views})
             except Exception as e:
                 continue
                 
-    # Ordenar por views o impacto si está disponible para sacar los destacados
     if all_tweets:
         sorted_tweets = sorted(all_tweets, key=lambda x: x.get('views', 0) or 0, reverse=True)
         for t in sorted_tweets[:3]:
@@ -184,19 +198,18 @@ def get_tweets_and_summarize():
     if not all_tweets and not reddit_comments_raw:
         return "🔵🟡🔵 *Operativo Boca*: No pude recuperar datos de Twitter ni de Reddit."
         
-    prompt = f"""Estás monitoreando las redes (Twitter y Reddit) durante un evento/partido. 
-Arma un párrafo de 3 o 4 líneas resumiendo el 'termómetro' general de los hinchas basándote en la data cruda provista. Destaca si hay calenturas, festejos, o críticas a jugadores/DT. No incluyas citas textuales en tu resumen, yo las agregaré después. 
+    prompt = f"""Sos un analista deportivo monitoreando las redes sociales (Twitter y Reddit) durante un evento/partido. 
+Armá un párrafo corto (3 o 4 líneas máximo) resumiendo el 'termómetro' general de los hinchas basándote en la siguiente data cruda extraída hace minutos. 
+Destacá si hay enojo, festejos, ironía o críticas a jugadores/DT puntuales. 
+Importante: No incluyas citas textuales en tu resumen ni listados, quiero solo el análisis en prosa rápida.
 
 Data cruda:
 {tweets_text}
 {reddit_context}
 """
     
-    resumen = subprocess.run(["openclaw", "run", "--model", "default", "--prompt", prompt], capture_output=True, text=True).stdout
-    if not resumen.strip():
-        resumen = subprocess.run(["openclaw", "run", "--model", "gemini-flash", "--prompt", prompt], capture_output=True, text=True).stdout
+    resumen = call_ollama(prompt)
     
-    # Ensamblar el mensaje final
     final_message = f"🔵🟡🔵 **Termómetro del Partido** 🔵🟡🔵\n\n"
     final_message += f"📊 **Resumen General:**\n{resumen.strip()}\n\n"
     
