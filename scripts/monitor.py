@@ -31,7 +31,7 @@ def send_telegram_message(text):
         return
 
     cmd = [
-        "openclaw", "message", "send",
+        "/home/pablo/.npm-global/bin/openclaw", "message", "send",
         "--channel", "telegram", "--account", "main",
         "--target", TELEGRAM_CHAT_ID,
         "--message", text
